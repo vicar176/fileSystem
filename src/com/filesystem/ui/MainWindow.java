@@ -100,12 +100,16 @@ public class MainWindow {
 			System.out.println(var.getPath());
 			VirtualDirectory one = ce.getVirtualDirectories().get("/home/var/varias/one");
 			System.out.println(one.getPath());
-			
+			////REVISAR
+			System.out.println("contenido 1: " + ce.verContenido(test1));
 			ce.copyVirtualFiles("/home/var/varias/ejemplo.txt", "/home/var/varias/one");
-			VirtualFile ejemplo = one.getFilesList().get("ejemplo.txt");
+			System.out.println("contenido 2: " + ce.verContenido(test1));
+			/*VirtualFile ejemplo = one.getFilesList().get("ejemplo.txt");
 			ce.copyVirtualDirectory("/home/var", "/");
 			
-			System.out.println(ejemplo.getPath());
+			System.out.println(ejemplo.getPath());*/
+			ce.copyVirtualFileToRealPath(test1.getPath(), "/test");
+			System.out.println("contenido 3: " + ce.verContenido(test1));
 			
 		} catch (Exception e) {
 			System.out.println(e.getMessage());

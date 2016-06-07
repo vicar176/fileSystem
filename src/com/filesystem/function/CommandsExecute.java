@@ -8,10 +8,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -333,6 +337,47 @@ public class CommandsExecute {
 	}
 
 	// / PRIVATE METHODS
+	
+	public void copyVirtualFileToRealPath(String from, String to){
+		String [] splitArray = from.split("/");
+		String fileName = splitArray[splitArray.length - 1];
+		String dirName = from.replace("/" + fileName, "");
+		if(dirName.equals("")){
+			dirName = "/";
+		}
+		VirtualDirectory current = virtualDirectories.get(dirName);
+		VirtualFile file = current.getFilesList().get(fileName);
+		InputStream is = null;
+		OutputStream os = null;
+		try {
+			//Path realPath = Paths.get(new URI(to));
+			//if(Files.exists(realPath)){
+				File f = new File("D:" + File.separator + "test"+ File.separator+ fileName);
+				is = file.getContent();
+				os = new FileOutputStream(f);
+				int read = 0;
+				byte[] bytes = new byte[1024];
+
+				while ((read = is.read(bytes)) != -1) {
+					os.write(bytes, 0, read);
+				}
+			//}
+		/*} catch (URISyntaxException e) {
+			System.out.println(e);*/
+		} catch (FileNotFoundException e) {
+			System.out.println(e);
+		} catch (IOException e) {
+			System.out.println(e);
+		} finally {
+			try {
+				is.close();
+				os.close();
+			} catch (IOException e) {
+				System.out.println(e);
+			}
+			
+		}
+	}
 	
 	public void copyVirtualFiles(String from, String to) throws Exception{
 		String [] splitArray = from.split("/");
