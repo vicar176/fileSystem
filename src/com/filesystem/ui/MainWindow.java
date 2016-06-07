@@ -80,7 +80,6 @@ public class MainWindow {
 		
 		try {
 			ce.createVirtualDirectory("home", rootDir);
-			System.out.println("Free memory: " + ce.getFreeMemory());
 			ce.createVirtualDirectory("var", rootDir);
 			VirtualDirectory home = ce.getVirtualDirectories().get("/home");
 			ce.createVirtualDirectory("varias", home);
@@ -101,6 +100,12 @@ public class MainWindow {
 			System.out.println(var.getPath());
 			VirtualDirectory one = ce.getVirtualDirectories().get("/home/var/varias/one");
 			System.out.println(one.getPath());
+			
+			ce.copyVirtualFiles("/home/var/varias/ejemplo.txt", "/home/var/varias/one");
+			VirtualFile ejemplo = one.getFilesList().get("ejemplo.txt");
+			ce.copyVirtualDirectory("/home/var", "/");
+			
+			System.out.println(ejemplo.getPath());
 			
 		} catch (Exception e) {
 			System.out.println(e.getMessage());

@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class CommandsExecute {
 	private int freeMemory;
 
 	private Map<String, VirtualDirectory> virtualDirectories;
-	private Map<String, VirtualFile> virtualFiles;
+	//private Map<String, VirtualFile> virtualFiles;
 
 	private DefaultMutableTreeNode rootNode;
 
@@ -49,9 +50,9 @@ public class CommandsExecute {
 		return virtualDirectories;
 	}
 	
-	public Map<String, VirtualFile> getVirtualFiles() {
+	/*public Map<String, VirtualFile> getVirtualFiles() {
 		return virtualFiles;
-	}
+	}*/
 
 	public DefaultMutableTreeNode getRootNode() {
 		return rootNode;
@@ -72,6 +73,9 @@ public class CommandsExecute {
 			if (this.virtualDirectories == null) {
 				this.virtualDirectories = new HashMap<String, VirtualDirectory>();
 			}
+			/*if (this.virtualFiles == null){
+				this.virtualFiles = new HashMap<String, VirtualFile>();
+			}*/
 
 			root = new VirtualDirectory(ROOT_DIR);
 			rootNode = new DefaultMutableTreeNode(ROOT_DIR);
@@ -110,7 +114,7 @@ public class CommandsExecute {
 						DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(fileKey);
 						currentDir.getNode().add(newNode);
 						file.setNode(newNode);
-						virtualFiles.put(file.getPath(), file);
+						//virtualFiles.put(file.getPath(), file);
 					} catch (Exception e) {
 						throw e;
 					}
@@ -127,13 +131,14 @@ public class CommandsExecute {
 
 	public VirtualDirectory createVirtualDirectory(String name, VirtualDirectory currentDir)
 			throws Exception {
+		VirtualDirectory newDirectory = null;
 		if (hardDriveExists()) {
 			if (currentDir != null) {
 				if(currentDir.getDirectoriesList() == null){
 					currentDir.setDirectoriesList(new HashMap<String, VirtualDirectory>());
 				}
 				if(!currentDir.getDirectoriesList().containsKey(name)){
-					VirtualDirectory newDirectory = new VirtualDirectory(name);
+					newDirectory = new VirtualDirectory(name);
 					DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(name);
 					currentDir.getNode().add(newNode);
 					newDirectory.setNode(newNode);
@@ -151,7 +156,7 @@ public class CommandsExecute {
 		} else {
 			throw new Exception("No existe Disco Virtual");
 		}
-		return currentDir;
+		return newDirectory;
 	}
 
 	public VirtualDirectory changeDirectory(String directoryPath) throws Exception {
@@ -241,6 +246,7 @@ public class CommandsExecute {
 			String currentPath = file.getPath().replace("/" + file.getName(), "");
 			VirtualDirectory currentDirectory = virtualDirectories.get(currentPath);
 			String fileKey = file.getName();
+			//virtualFiles.remove(file.getPath());
 			if(destinationPath.contains("/")){
 				VirtualDirectory destinationDirectory = virtualDirectories.get(destinationPath);
 				if(destinationDirectory != null){
@@ -256,6 +262,7 @@ public class CommandsExecute {
 					destinationFilesList.put(fileKey, file);
 					destinationDirectory.setFilesList(destinationFilesList);
 					destinationDirectory.getNode().add(file.getNode());
+					///virtualFiles.put(file.getPath(), file);
 				} else {
 					System.out.println("El directorio de destino no existe");
 				}
@@ -265,6 +272,7 @@ public class CommandsExecute {
 				updateFileName(file, destinationPath);
 				file.getNode().setUserObject(file.getName());
 				currentDirectory.getFilesList().put(destinationPath, file);
+				//virtualFiles.put(file.getPath(), file);
 			}
 		} else {
 			throw new Exception("No existe Disco Virtual");
@@ -311,13 +319,13 @@ public class CommandsExecute {
 	
 	public void copyFile(String from, String to){
 		
-		if(virtualFiles.containsKey(from) && virtualDirectories.containsKey(to)){
+		/*if(virtualFiles.containsKey(from) && virtualDirectories.containsKey(to)){
 		
 		} else if(virtualFiles.containsKey(from) && !virtualDirectories.containsKey(to)){
 			
 		} else if(!virtualFiles.containsKey(from) && !virtualDirectories.containsKey(to)) {
 			
-		}
+		}*/
 	}
 	
 	public void copyDirectory(String from, String to){
@@ -326,16 +334,55 @@ public class CommandsExecute {
 
 	// / PRIVATE METHODS
 	
-	private void copyVirtualFiles(String from, String to){
-		VirtualFile file = virtualFiles.get(from);
+	public void copyVirtualFiles(String from, String to) throws Exception{
+		String [] splitArray = from.split("/");
+		String fileName = splitArray[splitArray.length - 1];
+		String dirName = from.replace("/" + fileName, "");
+		if(dirName.equals("")){
+			dirName = "/";
+		}
+		VirtualDirectory current = virtualDirectories.get(dirName);
+		VirtualFile file = current.getFilesList().get(fileName);
 		VirtualDirectory directory = virtualDirectories.get(to);
-		
-		if(directory.getFilesList().containsKey(file.getName())){
+		if(directory.getFilesList() != null && directory.getFilesList().containsKey(file.getName())){
 			
 		} else {
-			
+			String content = verContenido(file);
+			createVirtualFile(content, file.getSimpleName(), file.getExtension(), directory);
 		}
+	}
+	
+	public void copyVirtualDirectory(String from, String to) throws Exception{
+		VirtualDirectory dirFrom = virtualDirectories.get(from);
+		VirtualDirectory dirTo = virtualDirectories.get(to);
+		if(dirTo.getDirectoriesList().containsKey(dirFrom.getName())){
+			
+		} else {
+			createDirectoriesInDirectory(dirFrom, dirTo);
+		}	
+	}
+	
+	private void createDirectoriesInDirectory(VirtualDirectory dirForCopy, VirtualDirectory parentDir) throws Exception{
+		VirtualDirectory newDir = createVirtualDirectory(dirForCopy.getName(), parentDir);
 		
+		List<VirtualDirectory> directoriesList = null;
+		List<VirtualFile> filesList = null;
+		if(dirForCopy.getDirectoriesList() != null){
+			directoriesList = new ArrayList<VirtualDirectory>(dirForCopy.getDirectoriesList().values());
+		}
+		if(dirForCopy.getFilesList() != null){
+			filesList = new ArrayList<VirtualFile>(dirForCopy.getFilesList().values());
+		}
+		if(directoriesList != null){
+			for(VirtualDirectory dir : directoriesList){
+				createDirectoriesInDirectory(dir, newDir);
+			}
+		}
+		if(filesList != null){
+			for(VirtualFile file : filesList){
+				copyVirtualFiles(file.getPath(), newDir.getPath());
+			}
+		}
 	}
 	
 	private void removeOldDirectoriesPath(VirtualDirectory directory){
