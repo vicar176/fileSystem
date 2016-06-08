@@ -1,30 +1,34 @@
 package com.filesystem.ui;
 
 import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
+import java.util.Map;
 
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextArea;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.filesystem.function.CommandsExecute;
 import com.filesystem.model.VirtualDirectory;
-import com.filesystem.model.VirtualFile;
-
-import javax.swing.JTextArea;
-
-import java.awt.BorderLayout;
-import java.util.Enumeration;
-
-import javax.swing.JComboBox;
-import javax.swing.JTree;
-import javax.swing.JPanel;
-import javax.swing.event.TreeModelListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 
 public class MainWindow {
 
 	private JFrame frame;
+	private JTree tree;
+	private JComboBox comboBox;
+	private JTextArea lineaComandos;
+	private JTextArea consola;
+	private CommandsExecute commandsExecute;
+	private JButton btnEjecutar;
+	private JLabel path;
+	private VirtualDirectory currentDir;
 
 	/**
 	 * Launch the application.
@@ -40,85 +44,214 @@ public class MainWindow {
 				}
 			}
 		});
-		CommandsExecute ce = new CommandsExecute();
-		
-		try {
-			/*ce.createVirtualDrive(3, 100);
-			System.out.println("1. Free memory " + ce.getFreeMemory() + " of " + ce.getTotalMemory());
-			ce.createVirtualFile("this is an example", "test", "txt", ce.getVirtualDirectories().get("/"));
-			System.out.println("2. Free memory " + ce.getFreeMemory());
-			ce.createVirtualFile("this is an example", "test3", "txt", ce.getVirtualDirectories().get("/"));
-			System.out.println("3. Free memory " + ce.getFreeMemory());
-			ce.createVirtualFile("this is another example", "test2", "txt", ce.getVirtualDirectories().get("/"));
-			System.out.println("4. Free memory " + ce.getFreeMemory());
-			ce.listDirContent("/");*/
-		} catch (Exception e) {
-			System.out.print(e.getMessage());
-		}
+
 	}
 
-	/**
-	 * Create the application.
-	 */
 	public MainWindow() {
 		initialize();
 	}
 
-	/**
-	 * Initialize the contents of the frame.
-	 */
-	private void initialize() {
-		frame = new JFrame();
-		frame.setBounds(100, 100, 717, 429);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		
-		CommandsExecute ce = new CommandsExecute();
-		ce.createVirtualDrive(3, 50);
-		
-		VirtualDirectory rootDir = ce.getVirtualDirectories().get("/");
-		
-		try {
-			ce.createVirtualDirectory("home", rootDir);
-			ce.createVirtualDirectory("var", rootDir);
-			VirtualDirectory home = ce.getVirtualDirectories().get("/home");
-			ce.createVirtualDirectory("varias", home);
-			ce.createVirtualDirectory("test", home);
-			VirtualDirectory varias = ce.getVirtualDirectories().get("/home/varias");
-			ce.createVirtualDirectory("one", varias);
-			ce.createVirtualFile("hola esto es un test para ver como guarda sdfad", "test1", "txt", home);
-			VirtualFile test1 = home.getFilesList().get("test1.txt");
-			ce.moveFile(test1, "/home/varias");
-			System.out.println(test1.getPath()); // /home/varias/test1.txt
-			
-			ce.moveDirectory(varias, "/var"); // /var/varias
-			ce.moveFile(test1, "ejemplo.txt"); 
-			System.out.println(test1.getPath()); // /var/varias/ejemplo.txt
-			VirtualDirectory var = ce.getVirtualDirectories().get("/var");
-			ce.moveDirectory(var, "/home");  // /home/var
-			System.out.println(test1.getPath()); // /home/var/varias/ejemplo.txt
-			System.out.println(var.getPath());
-			VirtualDirectory one = ce.getVirtualDirectories().get("/home/var/varias/one");
-			System.out.println(one.getPath());
-			////REVISAR
-			System.out.println("contenido 1: " + ce.verContenido(test1));
-			ce.copyVirtualFiles("/home/var/varias/ejemplo.txt", "/home/var/varias/one");
-			System.out.println("contenido 2: " + ce.verContenido(test1));
-			/*VirtualFile ejemplo = one.getFilesList().get("ejemplo.txt");
-			ce.copyVirtualDirectory("/home/var", "/");
-			
-			System.out.println(ejemplo.getPath());*/
-			ce.copyVirtualFileToRealPath(test1.getPath(), "/test");
-			System.out.println("contenido 3: " + ce.verContenido(test1));
-			
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
+	public void executeCommand(String command, String instruccion) {
+		String [] values = null;
+		switch (command) {
+		case "CREATE":
+			values = instruccion.split(",");
+			try{
+				currentDir = commandsExecute.createVirtualDrive(Integer.parseInt(values[0]), Integer.parseInt(values[1]));
+				setConsoleText("Disco Virtual creado"); 
+				setNodesToTree(currentDir.getNode());
+				path.setText(currentDir.getPath());
+				lineaComandos.setText("");
+			} catch (Exception e) {
+				setConsoleText("Error al crear Disco Virtual, Disco Virtual no creado");
+			}
+			break;
+		case "FILE":
+			values = instruccion.split(",");
+			try {
+				String name = values [0];
+				String ext = values [1];
+				String content = values [2];
+				commandsExecute.createVirtualFile(content, name, ext, currentDir);
+				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
+				setConsoleText("Archivo creado");
+				path.setText(currentDir.getPath());
+				lineaComandos.setText("");
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "MKDIR":
+			try{
+				currentDir = commandsExecute.createVirtualDirectory(instruccion, currentDir);
+				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
+				setConsoleText("Directorio creado");
+				path.setText(currentDir.getPath());
+				lineaComandos.setText("");
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "CambiarDIR":
+			try{
+				currentDir = commandsExecute.changeDirectory(instruccion);
+				path.setText(currentDir.getPath());
+				lineaComandos.setText("");
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "ListarDIR":
+			try{
+				Map<String, List<String>> dirContentMap = commandsExecute.listDirContent(currentDir);
+				List<String> files = dirContentMap.get("files");
+				List<String> directories = dirContentMap.get("directories");
+				if(files == null && directories == null || files.size() == 0 && directories.size() == 0){
+					setConsoleText("Directorio vacio");
+				}
+				if(files != null && files.size() > 0){
+					setConsoleText("Archivos");
+					for(String name : files){
+						setConsoleText(name);
+					}
+				}
+				if(directories != null && directories.size() > 0){
+					setConsoleText("Directorios");
+					for(String name : directories){
+						setConsoleText(name);
+					}
+				}
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "ModFILE":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "VerPropiedades":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "ContFile":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "CoPY":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "MoVer":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "ReMove":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
+		case "FIND":
+			try{
+				
+			} catch (Exception e) {
+				setConsoleText(e.getMessage());
+			}
+			break;
 		}
-		
-		JTree tree = new JTree(rootDir.getNode());
-		tree.setSize(200, 100);
-		frame.getContentPane().add(tree, BorderLayout.WEST);
+	}
+
+	private void setConsoleText(String output) {
+		String consoleOutput;
+		consoleOutput = consola.getText();
+		consola.setText(output + "\n" + consoleOutput);
+	}
 	
+	private void ejecutarComando(){
+		btnEjecutar.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String instruction = lineaComandos.getText();
+				String command = (String) comboBox.getSelectedItem();
+				executeCommand(command, instruction);
+			}
+			
+		});
+	}
+
+	private void setNodesToTree(DefaultMutableTreeNode node) {
+		tree.setModel(new DefaultTreeModel(node));
+	}
+
+	@SuppressWarnings({ "unchecked", "serial", "rawtypes" })
+	private void initialize() {
+		
+		commandsExecute = new CommandsExecute();
+		
+		frame = new JFrame();
+		frame.setBounds(100, 100, 809, 456);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+
+		tree = new JTree();
+		tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("----") {
+			{
+			}
+		}));
+		tree.setBounds(677, 11, 106, 396);
+		frame.getContentPane().add(tree);
+
+		path = new JLabel("");
+		path.setToolTipText("Posici\u00F3n Actual");
+		path.setBounds(118, 58, 543, 14);
+		frame.getContentPane().add(path);
+
+		comboBox = new JComboBox();
+		comboBox.setToolTipText("Comandos");
+		comboBox.setBounds(11, 9, 97, 20);
+		comboBox.addItem("CREATE");
+		comboBox.addItem("FILE");
+		comboBox.addItem("MKDIR");
+		comboBox.addItem("CambiarDIR");
+		comboBox.addItem("ListarDIR");
+		comboBox.addItem("ModFILE");
+		comboBox.addItem("VerPropiedades");
+		comboBox.addItem("ContFile");
+		comboBox.addItem("CoPY");
+		comboBox.addItem("MoVer");
+		comboBox.addItem("ReMove");
+		comboBox.addItem("FIND");
+		frame.getContentPane().add(comboBox);
+
+		consola = new JTextArea();
+		consola.setEditable(false);
+		consola.setBounds(10, 81, 657, 326);
+		frame.getContentPane().add(consola);
+
+		lineaComandos = new JTextArea();
+		lineaComandos.setBounds(118, 7, 544, 40);
+		frame.getContentPane().add(lineaComandos);
+
+		btnEjecutar = new JButton("Ejecutar");
+		btnEjecutar.setBounds(19, 49, 89, 23);
+		frame.getContentPane().add(btnEjecutar);
+		ejecutarComando();
 	}
 
 }

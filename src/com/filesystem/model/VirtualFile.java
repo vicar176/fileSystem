@@ -1,6 +1,8 @@
 package com.filesystem.model;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -14,7 +16,8 @@ public class VirtualFile {
 	private String simpleName;
 	private String path;
 	private String extension;
-	private InputStream content;
+	private InputStream contentStream;
+	private String content;
 	private int size;
 	private Date createdDate;
 	private Date updatedDate;
@@ -60,12 +63,17 @@ public class VirtualFile {
 		this.extension = extension;
 	}
 
-	public InputStream getContent() {
+	public InputStream getContentStream() {
+		return contentStream;
+	}
+	
+	public String getContent() {
 		return content;
 	}
-
-	public void setContent(InputStream content) {
+	
+	public void setContent(String content) {
 		this.content = content;
+		this.contentStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
 	}
 
 	public int getSize() {

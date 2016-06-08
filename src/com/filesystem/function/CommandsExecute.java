@@ -112,7 +112,7 @@ public class CommandsExecute {
 				String fileKey = name + "." + extension;
 				if (!files.containsKey(fileKey)) {
 					try{
-						VirtualFile file = internalCreateFile(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)),name, extension, currentDir);
+						VirtualFile file = internalCreateFile(content,name, extension, currentDir);
 						files.put(fileKey, file);
 						currentDir.setFilesList(files);
 						DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(fileKey);
@@ -177,10 +177,9 @@ public class CommandsExecute {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public Map<String, List<String>> listDirContent(String directoryName) throws Exception {
+	public Map<String, List<String>> listDirContent(VirtualDirectory currentDirectory) throws Exception {
 		Map<String, List<String>> dirContent = null;
 		if (hardDriveExists()) {
-			VirtualDirectory currentDirectory = virtualDirectories.get(directoryName);
 			if (currentDirectory != null) {
 				DefaultMutableTreeNode currentNode = currentDirectory.getNode();
 				Enumeration elements = currentNode.children();
@@ -189,7 +188,7 @@ public class CommandsExecute {
 					List<String> directories = null;
 					List<String> files = null;
 					while(elements.hasMoreElements()){
-						String elementValue = (String) elements.nextElement();
+						String elementValue = (String) ((DefaultMutableTreeNode) elements.nextElement()).getUserObject();
 						if(currentDirectory.getFilesList().containsKey(elementValue)){
 							if(files == null){
 								files = new ArrayList<String>();
@@ -219,11 +218,11 @@ public class CommandsExecute {
 	}
 	
 	public void actualizaContenido(VirtualFile file, String content){
-		file.setContent(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+		file.setContent(content);
 	}
 	
 	public String verContenido(VirtualFile file){
-		BufferedReader br = null;
+		/*BufferedReader br = null;
 		StringBuilder sb = new StringBuilder();
 		String line;
 		try {
@@ -241,8 +240,8 @@ public class CommandsExecute {
 					e.printStackTrace();
 				}
 			}
-		}
-		return sb.toString();
+		}*/
+		return file.getContent();//sb.toString();
 	}
 	
 	public void moveFile(VirtualFile file, String destinationPath) throws Exception{
@@ -353,7 +352,7 @@ public class CommandsExecute {
 			//Path realPath = Paths.get(new URI(to));
 			//if(Files.exists(realPath)){
 				File f = new File("D:" + File.separator + "test"+ File.separator+ fileName);
-				is = file.getContent();
+				is = file.getContentStream();
 				os = new FileOutputStream(f);
 				int read = 0;
 				byte[] bytes = new byte[1024];
@@ -375,7 +374,6 @@ public class CommandsExecute {
 			} catch (IOException e) {
 				System.out.println(e);
 			}
-			
 		}
 	}
 	
@@ -392,8 +390,9 @@ public class CommandsExecute {
 		if(directory.getFilesList() != null && directory.getFilesList().containsKey(file.getName())){
 			
 		} else {
-			String content = verContenido(file);
+			String content = new String(verContenido(file));
 			createVirtualFile(content, file.getSimpleName(), file.getExtension(), directory);
+			System.out.println(content);
 		}
 	}
 	
@@ -465,11 +464,11 @@ public class CommandsExecute {
 		return exists;
 	}
 
-	private VirtualFile internalCreateFile(InputStream contentStream,
+	private VirtualFile internalCreateFile(String content,
 			String name, String extension, VirtualDirectory currentDir) throws Exception {
 		VirtualFile file = null;
 		try {
-			int size = fileSize(contentStream);
+			int size = fileSize(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
 			if(size < freeMemory){
 				this.freeMemory -= size;
 				Date currentDate = new Date();
@@ -479,7 +478,7 @@ public class CommandsExecute {
 				file.setExtension(extension);
 				file.setCreatedDate(currentDate);
 				file.setUpdatedDate(currentDate);
-				file.setContent(contentStream);
+				file.setContent(content);
 				file.setSize(size);
 			} else {
 				throw new Exception(
