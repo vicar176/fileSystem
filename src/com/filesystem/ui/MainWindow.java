@@ -92,6 +92,7 @@ public class MainWindow {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "CDIR":
 		case "CambiarDIR":
 			try{
 				currentDir = commandsExecute.changeDirectory(instruccion);
@@ -101,12 +102,13 @@ public class MainWindow {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "LDIR":
 		case "ListarDIR":
 			try{
 				Map<String, List<String>> dirContentMap = commandsExecute.listDirContent(currentDir);
 				List<String> files = dirContentMap.get("files");
 				List<String> directories = dirContentMap.get("directories");
-				if(files == null && directories == null || files.size() == 0 && directories.size() == 0){
+				if(files == null && directories == null){
 					setConsoleText("Directorio vacio");
 				}
 				if(files != null && files.size() > 0){
@@ -125,27 +127,37 @@ public class MainWindow {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "MFILE":
 		case "ModFILE":
+			values = instruccion.split(",");
 			try{
-				
+				String name = values [0];
+				String content = values [1];
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "VP":
 		case "VerPropiedades":
 			try{
-				
+				String output = commandsExecute.verPropiedades(instruccion, currentDir);
+				setConsoleText(output);
+				lineaComandos.setText("");
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "CF":
 		case "ContFile":
 			try{
-				
+				String output = commandsExecute.verContenido(instruccion, currentDir);
+				setConsoleText(output);
+				lineaComandos.setText("");
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "CP":
 		case "CoPY":
 			try{
 				
@@ -153,13 +165,20 @@ public class MainWindow {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "MV":
 		case "MoVer":
+			values = instruccion.split(",");
 			try{
-				
+				String from = values [0];
+				String to = values [1];
+				commandsExecute.mover(currentDir, from, to);
+				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
+				lineaComandos.setText("");
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "RM":
 		case "ReMove":
 			try{
 				
@@ -169,6 +188,7 @@ public class MainWindow {
 			break;
 		case "FIND":
 			try{
+				
 				
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
