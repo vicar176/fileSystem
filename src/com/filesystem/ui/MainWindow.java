@@ -3,6 +3,8 @@ package com.filesystem.ui;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +19,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.filesystem.function.CommandsExecute;
 import com.filesystem.model.VirtualDirectory;
+import com.filesystem.model.VirtualFile;
 
 public class MainWindow {
 
@@ -160,7 +163,13 @@ public class MainWindow {
 		case "CP":
 		case "CoPY":
 			try{
-				
+				//para copiar hay que estar en el directorio donde esta el archivo que se quiere copiar
+				//o directorio a donde se quiere copiar
+				String []paths = instruccion.split(","); 
+				//File f = new File(instruccion);
+				VirtualFile file = currentDir.getFilesList().get(paths[0]);
+				commandsExecute.copyVirtualFiles(file, paths[1]);
+				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}

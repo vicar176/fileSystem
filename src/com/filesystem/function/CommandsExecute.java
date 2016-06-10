@@ -2,6 +2,7 @@ package com.filesystem.function;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -378,7 +379,7 @@ public class CommandsExecute {
 	}
 
 	public void copyDirectory(String from, String to) {
-
+		
 	}
 
 	// / PRIVATE METHODS
@@ -429,33 +430,69 @@ public class CommandsExecute {
 		}
 	}
 
-	public void copyVirtualFiles(String from, String to) throws Exception {
-		String[] splitArray = from.split("/");
+	public void copyVirtualFiles(VirtualFile file, String to) throws Exception {
+		/*String[] splitArray = from.split("/");
 		String fileName = splitArray[splitArray.length - 1];
 		String dirName = from.replace("/" + fileName, "");
 		if (dirName.equals("")) {
 			dirName = "/";
 		}
-		VirtualDirectory current = virtualDirectories.get(dirName);
-		VirtualFile file = current.getFilesList().get(fileName);
+		VirtualDirectory current = virtualDirectories.get(dirName);*/
+		//VirtualFile file = currentDir.getFilesList().get(fileName);
 		VirtualDirectory directory = virtualDirectories.get(to);
-		if (directory.getFilesList() != null
-				&& directory.getFilesList().containsKey(file.getName())) {
-
-		} else {
-			String content = new String(verContenido(file));
-			createVirtualFile(content, file.getSimpleName(),
-					file.getExtension(), directory);
+		String fileName = file.getSimpleName();
+		if (directory.getFilesList() != null && directory.getFilesList().containsKey(file.getName())) {
+			fileName += "-copy";
+		} 
+		createVirtualFile(file.getContent(), fileName, file.getExtension(), directory);
+	}
+	
+	public void copyRealFileToVirtual(File fileEntry, VirtualDirectory currentDir) throws Exception {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(fileEntry);
+			String [] fileName = fileEntry.getName().split("\\.");
+        	
+        	int content;
+        	StringBuilder sb = new StringBuilder();
+        	try {
+				while ((content = fis.read()) != -1) {
+					sb.append((char) content);
+				}
+			} catch (IOException e) {
+				System.out.println(e);
+				e.printStackTrace();
+			}
+        	createVirtualFile(sb.toString(), fileName[0], fileName[1], currentDir); 
+		} catch (FileNotFoundException e) {
+			System.out.println(e);
+			throw new Exception(e);
+		} finally {
+			try {
+				fis.close();
+			} catch (IOException e) {
+				System.out.println(e);
+			}
 		}
 	}
+	
+	public void copyRealDirToVirtual(final File folder, VirtualDirectory currentDir) throws Exception {
+		for (final File fileEntry : folder.listFiles()) {
+	        if (fileEntry.isDirectory()) {
+	        	copyRealDirToVirtual(fileEntry, createVirtualDirectory(fileEntry.getName(), currentDir));
+	        } else {
+	        	copyRealFileToVirtual(fileEntry, currentDir);
+	        }
+	    }
+	}
 
-	public void copyVirtualDirectory(String from, String to) throws Exception {
-		VirtualDirectory dirFrom = virtualDirectories.get(from);
+	public void copyVirtualDirectory(VirtualDirectory currentDir, String to) throws Exception {
 		VirtualDirectory dirTo = virtualDirectories.get(to);
-		if (dirTo.getDirectoriesList().containsKey(dirFrom.getName())) {
-
+		if (dirTo.getDirectoriesList().containsKey(currentDir.getName())) {
+			String dirName = currentDir.getName() + "-copy";
+			createDirectoriesInDirectory(currentDir, createVirtualDirectory(dirName, dirTo));
 		} else {
-			createDirectoriesInDirectory(dirFrom, dirTo);
+			createDirectoriesInDirectory(currentDir, dirTo);
 		}
 	}
 
@@ -481,7 +518,7 @@ public class CommandsExecute {
 		}
 		if (filesList != null) {
 			for (VirtualFile file : filesList) {
-				copyVirtualFiles(file.getPath(), newDir.getPath());
+				copyVirtualFiles(file, newDir.getPath());
 			}
 		}
 	}
@@ -585,5 +622,4 @@ public class CommandsExecute {
 		}
 		return file;
 	}
-
 }
