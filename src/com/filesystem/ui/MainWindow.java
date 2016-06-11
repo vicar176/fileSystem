@@ -20,18 +20,22 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import com.filesystem.function.CommandsExecute;
 import com.filesystem.model.VirtualDirectory;
 import com.filesystem.model.VirtualFile;
+import javax.swing.JScrollPane;
+import java.awt.Font;
 
 public class MainWindow {
 
 	private JFrame frame;
 	private JTree tree;
-	private JComboBox comboBox;
 	private JTextArea lineaComandos;
 	private JTextArea consola;
 	private CommandsExecute commandsExecute;
 	private JButton btnEjecutar;
 	private JLabel path;
 	private VirtualDirectory currentDir;
+	private JScrollPane scrollPane;
+	private JScrollPane scrollPane_1;
+	private JScrollPane scrollPane_2;
 
 	/**
 	 * Launch the application.
@@ -95,6 +99,7 @@ public class MainWindow {
 				setConsoleText(e.getMessage());
 			}
 			break;
+		case "CD":
 		case "CDIR":
 		case "CambiarDIR":
 			try{
@@ -108,24 +113,24 @@ public class MainWindow {
 		case "LDIR":
 		case "ListarDIR":
 			try{
+				StringBuilder sb = new StringBuilder();
 				Map<String, List<String>> dirContentMap = commandsExecute.listDirContent(currentDir);
 				List<String> files = dirContentMap.get("files");
 				List<String> directories = dirContentMap.get("directories");
 				if(files == null && directories == null){
-					setConsoleText("Directorio vacio");
+					sb.append("Directorio vacio");
 				}
 				if(files != null && files.size() > 0){
-					setConsoleText("Archivos");
 					for(String name : files){
-						setConsoleText(name);
+						sb.append(name + "\n");
 					}
 				}
 				if(directories != null && directories.size() > 0){
-					setConsoleText("Directorios");
 					for(String name : directories){
-						setConsoleText(name);
+						sb.append(name + "\n");
 					}
 				}
+				setConsoleText(sb.toString());
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}
@@ -137,6 +142,7 @@ public class MainWindow {
 				String name = values [0];
 				String content = values [1];
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
 			break;
@@ -147,6 +153,7 @@ public class MainWindow {
 				setConsoleText(output);
 				lineaComandos.setText("");
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
 			break;
@@ -157,6 +164,7 @@ public class MainWindow {
 				setConsoleText(output);
 				lineaComandos.setText("");
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
 			break;
@@ -168,7 +176,9 @@ public class MainWindow {
 				String []paths = instruccion.split(","); 
 				commandsExecute.copy(currentDir, paths[0], paths[1]);
 				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
+				lineaComandos.setText("");
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
 			break;
@@ -182,6 +192,7 @@ public class MainWindow {
 				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
 				lineaComandos.setText("");
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
 			break;
@@ -192,16 +203,31 @@ public class MainWindow {
 				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
 				lineaComandos.setText("");
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
 			break;
 		case "FIND":
 			try{
-				
-				
+				StringBuilder sb = new StringBuilder();
+				List<String> resultados = commandsExecute.find(instruccion);
+				if(resultados != null) {
+					for(String res : resultados){
+						sb.append(res + "\n");
+					}
+				}
+				setConsoleText(sb.toString());
+				lineaComandos.setText("");
 			} catch (Exception e) {
+				lineaComandos.setText("");
 				setConsoleText(e.getMessage());
 			}
+			break;
+		case "clear":
+			setConsoleText("");
+			break;
+		default:
+			setConsoleText("El comando no existe o esta mal escrito");
 			break;
 		}
 	}
@@ -216,9 +242,13 @@ public class MainWindow {
 		btnEjecutar.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String instruction = lineaComandos.getText();
-				String command = (String) comboBox.getSelectedItem();
-				executeCommand(command, instruction);
+				try{
+					String [] instruction = lineaComandos.getText().split(";");
+					String command = instruction[0];
+					executeCommand(command, instruction[1]);
+				}catch(Exception ex){
+					setConsoleText("Faltan parametros");
+				}
 			}
 			
 		});
@@ -234,55 +264,51 @@ public class MainWindow {
 		commandsExecute = new CommandsExecute();
 		
 		frame = new JFrame();
-		frame.setBounds(100, 100, 809, 456);
+		frame.setBounds(100, 100, 858, 477);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 
-		tree = new JTree();
-		tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("----") {
-			{
-			}
-		}));
-		tree.setBounds(677, 11, 106, 396);
-		tree.setAutoscrolls(true);
-		tree.setExpandsSelectedPaths(true);
-		frame.getContentPane().add(tree);
-
 		path = new JLabel("");
 		path.setToolTipText("Posici\u00F3n Actual");
-		path.setBounds(118, 58, 543, 14);
+		path.setBounds(145, 58, 543, 14);
 		frame.getContentPane().add(path);
 
-		comboBox = new JComboBox();
-		comboBox.setToolTipText("Comandos");
-		comboBox.setBounds(11, 9, 97, 20);
-		comboBox.addItem("CREATE");
-		comboBox.addItem("FILE");
-		comboBox.addItem("MKDIR");
-		comboBox.addItem("CambiarDIR");
-		comboBox.addItem("ListarDIR");
-		comboBox.addItem("ModFILE");
-		comboBox.addItem("VerPropiedades");
-		comboBox.addItem("ContFile");
-		comboBox.addItem("CoPY");
-		comboBox.addItem("MoVer");
-		comboBox.addItem("ReMove");
-		comboBox.addItem("FIND");
-		frame.getContentPane().add(comboBox);
-
-		consola = new JTextArea();
-		consola.setEditable(false);
-		consola.setBounds(10, 81, 657, 326);
-		frame.getContentPane().add(consola);
-
-		lineaComandos = new JTextArea();
-		lineaComandos.setBounds(118, 7, 544, 40);
-		frame.getContentPane().add(lineaComandos);
-
-		btnEjecutar = new JButton("Ejecutar");
-		btnEjecutar.setBounds(19, 49, 89, 23);
+		btnEjecutar = new JButton("Ejecutar Linea");
+		btnEjecutar.setBounds(10, 9, 126, 23);
 		frame.getContentPane().add(btnEjecutar);
+		
+		JLabel lblPathActual = new JLabel("Path actual :");
+		lblPathActual.setFont(new Font("Tahoma", Font.BOLD, 11));
+		lblPathActual.setBounds(54, 58, 81, 14);
+		frame.getContentPane().add(lblPathActual);
+				
+				scrollPane_1 = new JScrollPane();
+				scrollPane_1.setBounds(698, 9, 134, 419);
+				frame.getContentPane().add(scrollPane_1);
+		
+				tree = new JTree();
+				scrollPane_1.setViewportView(tree);
+				tree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode("----") {
+					{
+					}
+				}));
+				tree.setAutoscrolls(true);
+				tree.setExpandsSelectedPaths(true);
+						
+						scrollPane_2 = new JScrollPane();
+						scrollPane_2.setBounds(146, 9, 532, 38);
+						frame.getContentPane().add(scrollPane_2);
+				
+						lineaComandos = new JTextArea();
+						scrollPane_2.setViewportView(lineaComandos);
+								
+								scrollPane = new JScrollPane();
+								scrollPane.setBounds(23, 83, 655, 345);
+								frame.getContentPane().add(scrollPane);
+						
+								consola = new JTextArea();
+								scrollPane.setViewportView(consola);
+								consola.setEditable(false);
 		ejecutarComando();
 	}
-
 }

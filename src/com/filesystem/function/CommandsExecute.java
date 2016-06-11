@@ -18,6 +18,8 @@ import java.util.Map;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import org.eclipse.ui.internal.handlers.ReuseEditorTester;
+
 import com.filesystem.model.VirtualDirectory;
 import com.filesystem.model.VirtualFile;
 
@@ -196,11 +198,13 @@ public class CommandsExecute {
 						if (currentDirectory.getFilesList() != null && currentDirectory.getFilesList().containsKey(elementValue)) {
 							if (files == null) {
 								files = new ArrayList<String>();
+								files.add("-----Archivos-----");
 							}
 							files.add(elementValue);
 						} if (currentDirectory.getDirectoriesList() != null && currentDirectory.getDirectoriesList().containsKey(elementValue))  {
 							if (directories == null) {
 								directories = new ArrayList<String>();
+								directories.add("-----Directorios-----");
 							}
 							directories.add(elementValue);
 						}
@@ -595,6 +599,43 @@ public class CommandsExecute {
 			removeVirtualFile(currentDirectory, name);
 		} else {
 			removeVirtualDirectory(currentDirectory, name);
+		}
+	}
+	
+	public List<String> find(String expression) throws Exception{
+		List<String> resultados = null;
+		if(hardDriveExists()){
+			resultados = new ArrayList<String>();
+			VirtualDirectory rootDir = virtualDirectories.get("/");
+			findSubdirectoriesAndFiles(rootDir, resultados, expression);
+		} else {
+			throw new Exception("El disco virtual no existe");
+		}
+		
+		return resultados;
+	}
+	
+	public void findSubdirectoriesAndFiles(VirtualDirectory dir, List<String> resultados, String expression){
+		if(dir.getFilesList() != null){
+			List<VirtualFile> files = new ArrayList<VirtualFile>(dir.getFilesList().values());
+			if(files.size() > 0){
+				for(VirtualFile file : files){
+					if(file.getName().contains(expression)){
+						resultados.add(file.getPath());
+					}
+				}
+			}
+		}
+		if(dir.getDirectoriesList() != null){
+			List<VirtualDirectory> directories = new ArrayList<VirtualDirectory>(dir.getDirectoriesList().values());
+			if(directories.size() > 0){
+				for(VirtualDirectory directory : directories){
+					if(directory.getName().contains(expression)){
+						resultados.add(directory.getPath());
+					}
+					findSubdirectoriesAndFiles(directory, resultados, expression);
+				}
+			}
 		}
 	}
 	
