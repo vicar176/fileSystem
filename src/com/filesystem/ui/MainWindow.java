@@ -166,9 +166,7 @@ public class MainWindow {
 				//para copiar hay que estar en el directorio donde esta el archivo que se quiere copiar
 				//o directorio a donde se quiere copiar
 				String []paths = instruccion.split(","); 
-				//File f = new File(instruccion);
-				VirtualFile file = currentDir.getFilesList().get(paths[0]);
-				commandsExecute.copyVirtualFiles(file, paths[1]);
+				commandsExecute.copy(currentDir, paths[0], paths[1]);
 				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
@@ -190,7 +188,9 @@ public class MainWindow {
 		case "RM":
 		case "ReMove":
 			try{
-				
+				commandsExecute.remove(currentDir, instruccion);
+				setNodesToTree((DefaultMutableTreeNode)currentDir.getNode().getRoot());
+				lineaComandos.setText("");
 			} catch (Exception e) {
 				setConsoleText(e.getMessage());
 			}
@@ -244,6 +244,8 @@ public class MainWindow {
 			}
 		}));
 		tree.setBounds(677, 11, 106, 396);
+		tree.setAutoscrolls(true);
+		tree.setExpandsSelectedPaths(true);
 		frame.getContentPane().add(tree);
 
 		path = new JLabel("");

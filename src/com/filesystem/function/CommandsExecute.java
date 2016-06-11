@@ -361,31 +361,77 @@ public class CommandsExecute {
 			throw new Exception("No existe Disco Virtual");
 		}
 	}
+	
+	public void copy(VirtualDirectory currentDir, String from, String to) throws Exception{
+		if(from.contains(".") || to.contains(".")){
+			if(from.contains(":") && !to.contains(":")){
+				if(currentDir.getDirectoriesList() != null){
+					VirtualDirectory dir = currentDir.getDirectoriesList().get(to);
+					File fileEntry = new File(from);
+					copyRealFileToVirtual(fileEntry, dir);
+				} else if(virtualDirectories.containsKey(to)){
+					VirtualDirectory dir = virtualDirectories.get(to);
+					File fileEntry = new File(from);
+					copyRealFileToVirtual(fileEntry, dir);
+				} else {
+					throw new Exception("El directorio no existe");
+				}
+			} else if(!from.contains(":") && to.contains(":")) {
+				if(currentDir.getDirectoriesList() != null){
+					VirtualFile file = currentDir.getFilesList().get(from);
+					if(file != null){
+						copyVirtualFileToRealPath(file, to);
+					} else {
+						throw new Exception("El archivo no existe");
+					}
+				}
+			} else {
+				if(currentDir.getDirectoriesList() != null){
+					VirtualFile file = currentDir.getFilesList().get(from);
+					if(file != null){
+						copyVirtualFiles(file, to);
+					} else {
+						throw new Exception("El archivo no existe");
+					}
+				}
+			}
+		} else {
+			if(from.contains(":") && !to.contains(":")){
+				if(currentDir.getDirectoriesList() != null){
+					VirtualDirectory dir = currentDir.getDirectoriesList().get(to);
+					File fileEntry = new File(from);
+					copyRealDirToVirtual(fileEntry, dir);
+				} else if(virtualDirectories.containsKey(to)){
+					VirtualDirectory dir = virtualDirectories.get(to);
+					File fileEntry = new File(from);
+					copyRealDirToVirtual(fileEntry, dir);
+				} else {
+					throw new Exception("El directorio no existe");
+				}
+			} else if(!from.contains(":") && to.contains(":")) {
+				if(currentDir.getDirectoriesList() != null){
+					VirtualDirectory dir = currentDir.getDirectoriesList().get(from);
+					if(dir != null){
+						copyVirtualDirToRealPath(dir, to);
+					} else {
+						throw new Exception("El archivo no existe");
+					}
+				}
+			} else {
+				if(currentDir.getDirectoriesList() != null){
+					VirtualDirectory dir = currentDir.getDirectoriesList().get(from);
+					if(dir != null){
+						copyVirtualDirectory(dir, to);
+					} else {
+						throw new Exception("El archivo no existe");
+					}
+				}
+			}
+		}
+	}
 
-	public void copyFile(String from, String to) {
-
+	public void copyVirtualFileToRealPath(VirtualFile file, String to) throws Exception {
 		/*
-		 * if(virtualFiles.containsKey(from) &&
-		 * virtualDirectories.containsKey(to)){
-		 * 
-		 * } else if(virtualFiles.containsKey(from) &&
-		 * !virtualDirectories.containsKey(to)){
-		 * 
-		 * } else if(!virtualFiles.containsKey(from) &&
-		 * !virtualDirectories.containsKey(to)) {
-		 * 
-		 * }
-		 */
-	}
-
-	public void copyDirectory(String from, String to) {
-		
-	}
-
-	// / PRIVATE METHODS
-
-	public void copyVirtualFileToRealPath(String from, String to) throws Exception {
-		
 		String[] dirArray = to.split("\\");
 		
 		String pathFisico = "";
@@ -400,11 +446,12 @@ public class CommandsExecute {
 			dirName = "/";
 		}
 		VirtualDirectory current = virtualDirectories.get(dirName);
-		VirtualFile file = current.getFilesList().get(fileName);
+		VirtualFile file = current.getFilesList().get(fileName);*/
 		InputStream is = null;
 		OutputStream os = null;
 		try {
-			File f = new File(pathFisico + fileName);
+			//File f = new File(pathFisico + fileName);
+			File f = new File(to + File.separator + file.getName());
 			is = file.getContentStream();
 			os = new FileOutputStream(f);
 			int read = 0;
@@ -476,6 +523,26 @@ public class CommandsExecute {
 		}
 	}
 	
+	public void copyVirtualDirToRealPath(VirtualDirectory currentDir, String to) throws Exception{
+		
+		File realDir = new File(to + File.separator + currentDir.getName());
+		realDir.mkdir();
+		
+		if(currentDir.getFilesList() != null){
+			List<VirtualFile> filesList = new ArrayList<VirtualFile>(currentDir.getFilesList().values());
+			for (VirtualFile file : filesList) {
+				copyVirtualFileToRealPath(file, realDir.getPath());
+			}
+		}
+		
+		if(currentDir.getDirectoriesList() != null){
+			List<VirtualDirectory> directoriesList = new ArrayList<VirtualDirectory>(currentDir.getDirectoriesList().values());
+			for(VirtualDirectory directory : directoriesList){
+				copyVirtualDirToRealPath(directory, realDir.getPath());
+			}
+		}
+	}
+	
 	public void copyRealDirToVirtual(final File folder, VirtualDirectory currentDir) throws Exception {
 		for (final File fileEntry : folder.listFiles()) {
 	        if (fileEntry.isDirectory()) {
@@ -519,6 +586,59 @@ public class CommandsExecute {
 		if (filesList != null) {
 			for (VirtualFile file : filesList) {
 				copyVirtualFiles(file, newDir.getPath());
+			}
+		}
+	}
+	
+	public void remove(VirtualDirectory currentDirectory, String name) throws Exception{
+		if(name.contains(".")){
+			removeVirtualFile(currentDirectory, name);
+		} else {
+			removeVirtualDirectory(currentDirectory, name);
+		}
+	}
+	
+	private void removeVirtualFile(VirtualDirectory currentDirectory, String fileName) throws Exception{
+		if(currentDirectory.getFilesList() != null){
+			VirtualFile file = currentDirectory.getFilesList().get(fileName);
+			removeVirtualFile(file, currentDirectory);
+		} else {
+			throw new Exception("El archivo no existe");
+		}
+	}
+	
+	private void removeVirtualFile(VirtualFile file, VirtualDirectory currentDirectory) {
+		currentDirectory.getFilesList().remove(file.getName());
+		currentDirectory.getNode().remove(file.getNode());
+		freeMemory += file.getSize();		
+	}
+	
+	private void removeVirtualDirectory(VirtualDirectory currentDir, String dirName) throws Exception{
+		VirtualDirectory dir = null;
+		if(currentDir.getDirectoriesList().containsKey(dirName)){
+			dir = currentDir.getDirectoriesList().get(dirName);
+			removeDirectoriesFiles(dir);
+			removeOldDirectoriesPath(dir);
+			currentDir.getDirectoriesList().remove(dirName);
+			currentDir.getNode().remove(dir.getNode());
+		} else {
+			throw new Exception("El directorio no existe");
+		}
+	}
+	
+	private void removeDirectoriesFiles(VirtualDirectory dirToRemove) throws Exception{
+		List<VirtualDirectory> directoriesList = null;
+		List<VirtualFile> filesList = null;
+		if (dirToRemove.getFilesList() != null) {
+			filesList = new ArrayList<VirtualFile>(dirToRemove.getFilesList().values());
+			for (VirtualFile file : filesList) {
+				removeVirtualFile(file, dirToRemove);
+			}
+		}
+		if (dirToRemove.getDirectoriesList() != null) {
+			directoriesList = new ArrayList<VirtualDirectory>(dirToRemove.getDirectoriesList().values());
+			for (VirtualDirectory dir : directoriesList) {
+				removeDirectoriesFiles(dir);
 			}
 		}
 	}
